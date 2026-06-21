@@ -10,3 +10,10 @@ frontend/.env
 
 # System files
 .DS_Store
+
+# Ignore all markdown files
+*.md
+
+# EXCEPT these specific files
+!README.md
+!contribute.md
