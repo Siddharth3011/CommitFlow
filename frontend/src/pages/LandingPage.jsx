@@ -14,7 +14,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-              <img src="../public/logo.png" alt="logo" className='w-7 h-7' />
+              <img src="/logo.png" alt="logo" className='w-7 h-7' />
               {/* <Network className="w-5 h-5 text-indigo-400" /> */}
             </div>
             <span className="font-bold text-xl tracking-tight text-white">CommitFlow</span>
