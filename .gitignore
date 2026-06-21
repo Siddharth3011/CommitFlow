@@ -1,6 +1,7 @@
 # Ignore backend dependencies and secrets
 backend/node_modules/
 backend/.env
+backend/.env.example
 
 # Ignore frontend dependencies and builds
 frontend/node_modules/
