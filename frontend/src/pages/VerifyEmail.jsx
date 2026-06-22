@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
-import API from '../api/axiosInstance'; // 📂 Make sure this path correctly points to your custom Axios utility instance
+import API from '../api/axios'; // 📂 Make sure this path correctly points to your custom Axios utility instance
 
 const VerifyEmail = () => {
   const location = useLocation();
