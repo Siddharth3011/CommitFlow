@@ -1,3 +1,4 @@
+const dns = require('dns');
 const nodemailer = require('nodemailer');
 
 // Set up the transporter pointing to Gmail
@@ -6,6 +7,7 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // Use SSL/TLS directly for port 465
   family: 4,
+  lookup: dns.lookup,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_APP_PASSWORD,
