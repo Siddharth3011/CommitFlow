@@ -226,8 +226,8 @@ const login = async (req, res, next) => {
 const logout = (req, res) => {
   res.cookie('token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: true,
+    sameSite: 'none',
     maxAge: 0, // Expire the cookie immediately
   });
 

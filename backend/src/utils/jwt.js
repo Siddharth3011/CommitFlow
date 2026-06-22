@@ -28,8 +28,8 @@ const generateTokenAndSetCookie = (res, userId) => {
 
   res.cookie('token', token, {
     httpOnly: true,   // Prevents client-side JS from reading the cookie (XSS protection)
-    secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
-    sameSite: 'strict', // Prevents the cookie from being sent in cross-site requests (CSRF protection)
+    secure: true, // HTTPS-only in production
+    sameSite: 'none',// Prevents the cookie from being sent in cross-site requests (CSRF protection)
     maxAge: COOKIE_MAX_AGE_MS,
   });
 
