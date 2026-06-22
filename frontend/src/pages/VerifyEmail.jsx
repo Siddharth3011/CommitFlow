@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
+import API from '../api'; // 📂 Make sure this path correctly points to your custom Axios utility instance
 
 const VerifyEmail = () => {
   const location = useLocation();
@@ -28,7 +29,6 @@ const VerifyEmail = () => {
   }, [timer]);
 
   useEffect(() => {
-    // Redirect to signup if accessed directly without email state
     if (!email) {
       navigate('/signup');
     }
@@ -41,14 +41,11 @@ const VerifyEmail = () => {
     if (isNaN(value)) return;
 
     const newCode = [...code];
-    // Take only the last character entered
     newCode[index] = value.substring(value.length - 1);
     setCode(newCode);
 
-    // Clear error on typing
     if (error) setError('');
 
-    // Move to next input if value exists and there's a next field
     if (value && index < 5) {
       inputRefs.current[index + 1].focus();
     }
@@ -57,13 +54,11 @@ const VerifyEmail = () => {
   const handleKeyDown = (e, index) => {
     if (e.key === 'Backspace') {
       if (!code[index] && index > 0) {
-        // Move to previous input and clear it if current is already empty
         const newCode = [...code];
         newCode[index - 1] = '';
         setCode(newCode);
         inputRefs.current[index - 1].focus();
       } else {
-        // Clear current input
         const newCode = [...code];
         newCode[index] = '';
         setCode(newCode);
@@ -77,7 +72,6 @@ const VerifyEmail = () => {
     if (/^\d{6}$/.test(pastedData)) {
       const digits = pastedData.split('');
       setCode(digits);
-      // Focus last input
       inputRefs.current[5].focus();
     }
   };
@@ -89,23 +83,13 @@ const VerifyEmail = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email })
-      });
+      // ✅ Swapped fetch for your custom API utility instance
+      const response = await API.post('/auth/resend-otp', { email });
 
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to resend code.');
-      }
-
-      setTimer(60); // Start the 60 seconds cooldown
+      setTimer(60); 
     } catch (err) {
-      setError(err.message);
+      // Handle fallback if the error object structuralized from Axios
+      setError(err.response?.data?.message || err.message || 'Failed to resend code.');
     } finally {
       setIsLoading(false);
     }
@@ -121,19 +105,9 @@ const VerifyEmail = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, otpCode })
-      });
-
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Verification failed. Please try again.');
-      }
+      // ✅ Swapped fetch for your custom API utility instance
+      const response = await API.post('/auth/verify-otp', { email, otpCode });
+      const data = response.data;
 
       // Dispatch auth state
       dispatch(setCredentials({ user: data.user }));
@@ -141,7 +115,7 @@ const VerifyEmail = () => {
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Verification failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
