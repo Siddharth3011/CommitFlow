@@ -103,10 +103,21 @@ exports.createTask = async (req, res, next) => {
     const populatedTask = await Task.findById(task._id).populate('assignee', 'name email');
 
     // ── Project-Room Broadcast ─────────────────────────────────────────────
-    // Emit to the ENTIRE project room (including the creator) so all tabs and
-    // all connected teammates see the new card appear instantly.
+    // Emit to the project room, EXCLUDING the creator's own socket so they
+    // don't receive a self-echo that would double-render the card in their UI.
+    // The creator already appends the task locally via createTask.fulfilled.
+    //
+    // `socketId` is optionally sent by the frontend in the request body so
+    // the backend knows which socket to exclude. Falls back to broadcasting
+    // to everyone (safe — the Redux de-dupe guard in taskSlice handles it).
     try {
-      getIO().to(projectId).emit(EVENTS.TASK_CREATED, {
+      const senderSocketId = req.body.socketId || null;
+      const io = getIO();
+      const emitter = senderSocketId
+        ? io.to(projectId).except(senderSocketId)
+        : io.to(projectId);
+
+      emitter.emit(EVENTS.TASK_CREATED, {
         task: populatedTask,
         createdBy: req.user._id,
         projectId,

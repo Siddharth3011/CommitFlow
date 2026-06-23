@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../api/axios';
+import socket from '../../config/socket';
+
 
 // =============================================================================
 // Async Thunks — Task Management
@@ -29,7 +31,10 @@ export const createTask = createAsyncThunk(
   'tasks/createTask',
   async ({ projectId, taskData }, { rejectWithValue }) => {
     try {
-      const response = await API.post(`/projects/${projectId}/tasks`, taskData);
+      // Include the current socket ID so the backend can exclude this socket
+      // from the task:created broadcast, preventing the self-echo duplicate.
+      const payload = { ...taskData, socketId: socket.id || undefined };
+      const response = await API.post(`/projects/${projectId}/tasks`, payload);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -209,7 +214,16 @@ const taskSlice = createSlice({
       })
       .addCase(createTask.fulfilled, (state, action) => {
         state.actionLoading = false;
-        state.tasks.push(action.payload);
+        // Guard against duplicates: the backend emits `task:created` to the
+        // entire project room (including the creator's own socket via io.to()).
+        // This means taskAddedFromSocket may have already appended this task
+        // before or after this REST response resolves. Only push if the task
+        // is not already present in the array.
+        const incoming = action.payload;
+        const alreadyExists = state.tasks.some((t) => t._id === incoming._id);
+        if (!alreadyExists) {
+          state.tasks.push(incoming);
+        }
       })
       .addCase(createTask.rejected, (state, action) => {
         state.actionLoading = false;
