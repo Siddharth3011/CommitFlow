@@ -14,6 +14,7 @@ const {
   updateMemberRole,
   removeMember,
 } = require('../controllers/member.controller');
+const { sendInvitation } = require('../controllers/invitation.controller');
 
 const router = express.Router();
 
@@ -37,5 +38,8 @@ router.get('/:id/members', authorizeProjectRole(['admin', 'editor', 'viewer']), 
 router.post('/:id/members', authorizeProjectRole(['admin']), addMember);
 router.patch('/:id/members/:userId', authorizeProjectRole(['admin']), updateMemberRole);
 router.delete('/:id/members/:userId', authorizeProjectRole(['admin']), removeMember);
+
+// --- Project Invitation Routes ---
+router.post('/:id/invitations', authorizeProjectRole(['admin']), sendInvitation);
 
 module.exports = router;

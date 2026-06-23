@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Shield, Mail, User, ShieldCheck, ShieldAlert, ArrowRight, Loader2, Users } from 'lucide-react';
+import { Search, Shield, Mail, User, ShieldCheck, Loader2, Users, Send, ChevronDown } from 'lucide-react';
 import API from '../api/axios';
 import { fetchProjects } from '../features/projects/projectSlice';
 
@@ -35,6 +35,13 @@ const TeamManagement = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('All Roles');
+
+  // Invite panel state
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
+  const [inviteProjectId, setInviteProjectId] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState(null); // { type: 'success' | 'error', text }
 
   // Load projects if not already in state
   useEffect(() => {
@@ -106,6 +113,32 @@ const TeamManagement = () => {
     fetchAllMembers();
   }, [projects]);
 
+  // Handle invitation submit
+  const handleSendInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail || !inviteProjectId) {
+      setInviteMessage({ type: 'error', text: 'Please select a project and enter an email.' });
+      return;
+    }
+    setInviteLoading(true);
+    setInviteMessage(null);
+    try {
+      await API.post(`/projects/${inviteProjectId}/invitations`, {
+        email: inviteEmail,
+        role: inviteRole,
+      });
+      setInviteMessage({ type: 'success', text: `Invitation sent to ${inviteEmail}.` });
+      setInviteEmail('');
+    } catch (err) {
+      setInviteMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to send invitation.',
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   // Filters
   const filteredMembers = teamMembers.filter((m) => {
     const matchesSearch =
@@ -124,6 +157,76 @@ const TeamManagement = () => {
         <p className="mt-0.5 text-sm text-muted-foreground">
           View all collaborators, their active roles, and project assignments.
         </p>
+      </div>
+
+      {/* ── Invite Member Panel ─────────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Mail size={14} className="text-primary" />
+          Invite Member by Email
+        </h2>
+        <form onSubmit={handleSendInvite} className="flex flex-col sm:flex-row gap-3">
+          {/* Project selector */}
+          <div className="relative flex-1 min-w-0">
+            <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <select
+              value={inviteProjectId}
+              onChange={(e) => setInviteProjectId(e.target.value)}
+              className="w-full appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all cursor-pointer"
+            >
+              <option value="">Select project...</option>
+              {(projects || []).map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Email input */}
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="colleague@example.com"
+            className="flex-1 min-w-0 rounded-lg border border-border bg-card px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+          />
+
+          {/* Role selector */}
+          <div className="relative">
+            <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              className="appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all cursor-pointer"
+            >
+              <option value="viewer">Viewer</option>
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={inviteLoading}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60 shrink-0"
+          >
+            {inviteLoading ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Send size={13} />
+            )}
+            Send Invite
+          </button>
+        </form>
+
+        {/* Feedback message */}
+        {inviteMessage && (
+          <p className={`mt-3 text-xs font-medium ${
+            inviteMessage.type === 'success' ? 'text-emerald-500' : 'text-destructive'
+          }`}>
+            {inviteMessage.text}
+          </p>
+        )}
       </div>
 
       {/* Directory Filters & Actions */}

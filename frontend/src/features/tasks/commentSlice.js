@@ -116,7 +116,15 @@ const commentSlice = createSlice({
       })
       .addCase(addComment.fulfilled, (state, action) => {
         state.actionLoading = false;
-        state.comments.push(action.payload);
+        // Guard against duplicates: the socket `global:comment_added` event
+        // may have already appended this comment to state (race condition between
+        // the REST response and the real-time broadcast). Only push if the
+        // comment is not already present in the list.
+        const incoming = action.payload;
+        const alreadyExists = state.comments.some((c) => c._id === incoming._id);
+        if (!alreadyExists) {
+          state.comments.push(incoming);
+        }
       })
       .addCase(addComment.rejected, (state, action) => {
         state.actionLoading = false;

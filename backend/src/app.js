@@ -11,6 +11,7 @@ const commentRoutes = require('./routes/comment.routes');
 const attachmentRoutes = require('./routes/attachment.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const globalAnalyticsRoutes = require('./routes/globalAnalytics.routes');
+const invitationRoutes = require('./routes/invitation.routes');
 
 // Middleware Imports
 const errorHandler = require('./middleware/error.middleware');
@@ -78,6 +79,7 @@ app.use('/api', commentRoutes);
 app.use('/api', attachmentRoutes);
 app.use('/api', analyticsRoutes);
 app.use('/api/analytics', globalAnalyticsRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 // =============================================================================
 // Global Error Handler

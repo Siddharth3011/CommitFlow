@@ -17,6 +17,9 @@ import {
   MessageSquare,
   Paperclip,
   RefreshCw,
+  Mail,
+  CheckCheck,
+  XCircle,
 } from 'lucide-react';
 import {
   createProject,
@@ -369,13 +372,52 @@ const Dashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { projects = [], activityFeed = [], loading = false, error = null } = useSelector((state) => state.projects);
 
+  // Invitations state
+  const [invitations, setInvitations] = useState([]);
+  const [inviteActionLoading, setInviteActionLoading] = useState(null); // invitationId being processed
+
   const fetchDashboard = useCallback(() => {
     dispatch(fetchGlobalDashboardData());
   }, [dispatch]);
 
+  const fetchInvitations = useCallback(async () => {
+    try {
+      const res = await API.get('/invitations/mine');
+      setInvitations(res.data.invitations || []);
+    } catch (_) {
+      // Non-critical; silently ignore
+    }
+  }, []);
+
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+    fetchInvitations();
+  }, [fetchDashboard, fetchInvitations]);
+
+  const handleAcceptInvite = async (invitationId) => {
+    setInviteActionLoading(invitationId);
+    try {
+      await API.patch(`/invitations/${invitationId}/accept`);
+      setInvitations((prev) => prev.filter((inv) => inv._id !== invitationId));
+      fetchDashboard(); // Refresh project list
+    } catch (err) {
+      console.error('Failed to accept invitation:', err);
+    } finally {
+      setInviteActionLoading(null);
+    }
+  };
+
+  const handleDeclineInvite = async (invitationId) => {
+    setInviteActionLoading(invitationId);
+    try {
+      await API.patch(`/invitations/${invitationId}/decline`);
+      setInvitations((prev) => prev.filter((inv) => inv._id !== invitationId));
+    } catch (err) {
+      console.error('Failed to decline invitation:', err);
+    } finally {
+      setInviteActionLoading(null);
+    }
+  };
 
   const adminCount = projects.filter((p) => p.role === 'admin').length;
   const memberCount = projects.filter((p) => p.role !== 'admin').length;
@@ -418,6 +460,62 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+      {/* ── Pending Invitations Banner ─────────────────────────────────── */}
+      {invitations.length > 0 && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-400">
+            <Mail size={14} />
+            You have {invitations.length} pending project invitation{invitations.length > 1 ? 's' : ''}
+          </div>
+          <div className="space-y-2">
+            {invitations.map((inv) => {
+              const isProcessing = inviteActionLoading === inv._id;
+              return (
+                <div
+                  key={inv._id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg bg-card border border-border px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {inv.projectId?.name || 'Unknown Project'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Invited by{' '}
+                      <span className="font-semibold text-foreground">
+                        {inv.invitedBy?.name || 'a team member'}
+                      </span>{' '}
+                      &middot; Role:{' '}
+                      <span className="capitalize font-medium text-foreground">{inv.role}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleAcceptInvite(inv._id)}
+                      disabled={isProcessing}
+                      className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors disabled:opacity-60"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <CheckCheck size={12} />
+                      )}
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleDeclineInvite(inv._id)}
+                      disabled={isProcessing}
+                      className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+                    >
+                      <XCircle size={12} />
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
