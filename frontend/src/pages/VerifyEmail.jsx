@@ -4,6 +4,7 @@
     import { useDispatch } from 'react-redux';
     import { setCredentials } from '../features/auth/authSlice';
     import API from '../api/axios'; // 📂 Make sure this path correctly points to your custom Axios utility instance
+    import DevOtpBanner from '../components/DevOtpBanner';
 
     const VerifyEmail = () => {
       const location = useLocation();
@@ -15,6 +16,7 @@
       const [isLoading, setIsLoading] = useState(false);
       const [error, setError] = useState('');
       const [timer, setTimer] = useState(0);
+      const [showDevBanner, setShowDevBanner] = useState(import.meta.env.DEV);
       
       const inputRefs = useRef([]);
 
@@ -128,7 +130,10 @@
       };
 
       return (
-        <div className="min-h-screen bg-[#070a13] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen bg-[#070a13] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative">
+          {/* Explicitly mount the sticky top banner here in development */}
+          <DevOtpBanner visible={showDevBanner} onClose={() => setShowDevBanner(false)} />
+
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <div className="flex justify-center">
               <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import DevOtpBanner from '../components/DevOtpBanner';
 
 // =============================================================================
 // Register Page
@@ -20,6 +21,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [showDevBanner, setShowDevBanner] = useState(false);
 
   // Redirect to dashboard once the session is established
   useEffect(() => {
@@ -82,8 +84,8 @@ const Register = () => {
       password: formData.password,
     });
 
-    // Check if the thunk action was fulfilled
     if (actionResult?.type === 'auth/registerUser/fulfilled') {
+      setShowDevBanner(true);
       navigate('/verify-email', { state: { email: formData.email.trim() } });
     }
   };
@@ -107,6 +109,9 @@ const Register = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 transition-colors duration-300">
+      {/* Sticky dev-mode OTP banner */}
+      <DevOtpBanner visible={showDevBanner} onClose={() => setShowDevBanner(false)} />
+
       <div className="w-full max-w-md">
 
         {/* Brand Mark */}

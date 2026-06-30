@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import DevOtpBanner from '../components/DevOtpBanner';
 
 // =============================================================================
 // Login Page
@@ -14,7 +15,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
-  const [devOtpHint, setDevOtpHint] = useState(false);
+  const [showDevBanner, setShowDevBanner] = useState(false);
 
   // Redirect to dashboard once the session is established
   useEffect(() => {
@@ -59,13 +60,10 @@ const Login = () => {
       password: formData.password,
     });
 
-    // If VERIFICATION_REQUIRED, show the dev-mode OTP hint banner and navigate
     if (actionResult?.type === 'auth/loginUser/fulfilled') {
-      setDevOtpHint(true);
-      // Small delay so the user can read the banner before the page transitions
-      setTimeout(() => {
-        navigate('/verify-email', { state: { email: formData.email.trim() } });
-      }, 2000);
+      // Show the dev banner then navigate to the OTP screen
+      setShowDevBanner(true);
+      navigate('/verify-email', { state: { email: formData.email.trim() } });
     }
   };
 
@@ -73,6 +71,9 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 transition-colors duration-300">
+      {/* Sticky dev-mode OTP banner */}
+      <DevOtpBanner visible={showDevBanner} onClose={() => setShowDevBanner(false)} />
+
       <div className="w-full max-w-md">
 
         {/* Brand Mark */}
@@ -87,18 +88,6 @@ const Login = () => {
             Sign in to your CommitFlow workspace
           </p>
         </div>
-
-        {/* Dev-mode OTP hint banner */}
-        {devOtpHint && (
-          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
-            <p className="font-semibold text-amber-400 mb-0.5">🔐 Development Mode</p>
-            <p className="text-amber-300/90 leading-snug">
-              OTP email delivery may be restricted in sandbox mode.<br />
-              <span className="font-medium">Check your backend terminal</span> — the verification
-              code was printed there when you submitted.
-            </p>
-          </div>
-        )}
 
         {/* Card */}
         <div className="rounded-2xl border border-border bg-card px-8 py-8 shadow-sm">
