@@ -141,15 +141,22 @@ export const DashboardLayout = () => {
       console.log(`[Socket] Layout disconnected → reason: ${reason}`);
     };
 
+    const handleNewInvitationLayout = (invitation) => {
+      console.log(`[Socket] newInvitation received for user`);
+      setPendingInviteCount((prev) => prev + 1);
+    };
+
     socket.on('connect',                        handleConnect);
     socket.on(SOCKET_EVENTS.GLOBAL_TASK_UPDATED, handleGlobalTaskUpdated);
     socket.on(SOCKET_EVENTS.GLOBAL_COMMENT_ADDED, handleGlobalCommentAdded);
+    socket.on(SOCKET_EVENTS.NEW_INVITATION,      handleNewInvitationLayout);
     socket.on('disconnect',                     handleDisconnect);
 
     return () => {
       socket.off('connect',                        handleConnect);
       socket.off(SOCKET_EVENTS.GLOBAL_TASK_UPDATED, handleGlobalTaskUpdated);
       socket.off(SOCKET_EVENTS.GLOBAL_COMMENT_ADDED, handleGlobalCommentAdded);
+      socket.off(SOCKET_EVENTS.NEW_INVITATION,      handleNewInvitationLayout);
       socket.off('disconnect',                     handleDisconnect);
       // We don't call socket.disconnect() here so the global connection
       // persists as long as the user session is active.

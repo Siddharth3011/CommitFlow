@@ -79,6 +79,12 @@ export const SOCKET_EVENTS = {
    * Payload: { projectId, comment }
    */
   GLOBAL_COMMENT_ADDED: 'global:comment_added',
+
+  /** Broadcast: a task or project field was updated. */
+  TASK_UPDATED:         'taskUpdated',
+
+  /** Received on the personal user room when a new invitation is dispatched. */
+  NEW_INVITATION:       'newInvitation',
 };
 
 

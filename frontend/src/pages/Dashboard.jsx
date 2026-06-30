@@ -27,6 +27,7 @@ import {
   fetchGlobalDashboardData,
 } from '../features/projects/projectSlice';
 import API from '../api/axios';
+import socket, { SOCKET_EVENTS } from '../config/socket';
 
 // =============================================================================
 // Helpers
@@ -392,6 +393,21 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboard();
     fetchInvitations();
+
+    const handleNewInvitation = (invitation) => {
+      console.log('[Socket] newInvitation received -> prepending to list');
+      setInvitations((prev) => {
+        // Prevent duplicate append if it already exists
+        if (prev.some((inv) => inv._id === invitation._id)) return prev;
+        return [invitation, ...prev];
+      });
+    };
+
+    socket.on(SOCKET_EVENTS.NEW_INVITATION, handleNewInvitation);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.NEW_INVITATION, handleNewInvitation);
+    };
   }, [fetchDashboard, fetchInvitations]);
 
   const handleAcceptInvite = async (invitationId) => {

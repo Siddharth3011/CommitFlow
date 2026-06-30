@@ -5,6 +5,7 @@ import {
   taskAddedFromSocket,
   taskMovedFromSocket,
   taskRemovedFromSocket,
+  taskUpdatedFromSocket,
 } from '../features/tasks/taskSlice';
 
 // =============================================================================
@@ -134,7 +135,17 @@ const useProjectSocket = (projectId, currentUser) => {
     };
 
     /**
-     * Optional: log disconnects for diagnostics during development.
+     * Receiver: A remote peer updated task fields via REST (title, etc).
+     * Redux action: taskUpdatedFromSocket
+     */
+    const handleTaskUpdated = (payload) => {
+      if (!payload || !payload._id) return;
+      console.log(`[Socket] taskUpdated received → taskId: ${payload._id}`);
+      dispatch(taskUpdatedFromSocket(payload));
+    };
+
+    /**
+     * Receiver: socket disconnected
      */
     const handleDisconnect = (reason) => {
       console.log(`[Socket] Disconnected → reason: ${reason}`);
@@ -145,6 +156,7 @@ const useProjectSocket = (projectId, currentUser) => {
     socket.on(SOCKET_EVENTS.TASK_CREATED,  handleTaskCreated);
     socket.on(SOCKET_EVENTS.TASK_MOVED,    handleTaskMoved);
     socket.on(SOCKET_EVENTS.TASK_DELETED,  handleTaskDeleted);
+    socket.on(SOCKET_EVENTS.TASK_UPDATED,  handleTaskUpdated);
     socket.on('disconnect',                handleDisconnect);
 
     // =========================================================================
@@ -161,6 +173,7 @@ const useProjectSocket = (projectId, currentUser) => {
       socket.off(SOCKET_EVENTS.TASK_CREATED,  handleTaskCreated);
       socket.off(SOCKET_EVENTS.TASK_MOVED,    handleTaskMoved);
       socket.off(SOCKET_EVENTS.TASK_DELETED,  handleTaskDeleted);
+      socket.off(SOCKET_EVENTS.TASK_UPDATED,  handleTaskUpdated);
       socket.off('disconnect',                handleDisconnect);
 
       // Note: We deliberately do NOT call socket.disconnect() here because we want

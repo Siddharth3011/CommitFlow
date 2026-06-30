@@ -251,7 +251,6 @@ exports.updateTask = async (req, res, next) => {
     try {
       const io = getIO();
 
-      // Always emit task:moved so Kanban columns re-sort on status change.
       io.to(projectId.toString()).emit(EVENTS.TASK_MOVED, {
         taskId:    updatedTask._id.toString(),
         newStatus: updatedTask.status,
@@ -259,6 +258,9 @@ exports.updateTask = async (req, res, next) => {
         projectId: projectId.toString(),
         timestamp: new Date().toISOString(),
       });
+
+      // Broadcast 'taskUpdated' for dynamic field morphing (title, description, etc)
+      io.to(projectId.toString()).emit(EVENTS.TASK_UPDATED, updatedTask);
     } catch (socketErr) {
       console.warn('[task.controller] updateTask socket emit failed:', socketErr.message);
     }

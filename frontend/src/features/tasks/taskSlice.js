@@ -180,6 +180,23 @@ const taskSlice = createSlice({
       }
     },
 
+    /**
+     * Replaces an existing task when a peer updates its fields (e.g. title)
+     * via `taskUpdated`.
+     *
+     * Payload: TaskDocument
+     */
+    taskUpdatedFromSocket: (state, action) => {
+      const updatedTask = action.payload;
+      const existingTaskIndex = state.tasks.findIndex((t) => t._id === updatedTask._id);
+      if (existingTaskIndex !== -1) {
+        state.tasks[existingTaskIndex] = updatedTask;
+      }
+      if (state.selectedTask?._id === updatedTask._id) {
+        state.selectedTask = updatedTask;
+      }
+    },
+
     moveLiveTask: (state, action) => {
       const { taskId, newStatus, task } = action.payload;
       const existingTaskIndex = state.tasks.findIndex((t) => t._id === taskId);
@@ -280,6 +297,7 @@ export const {
   taskAddedFromSocket,
   taskMovedFromSocket,
   taskRemovedFromSocket,
+  taskUpdatedFromSocket,
   moveLiveTask,
 } = taskSlice.actions;
 

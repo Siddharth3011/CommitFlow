@@ -64,6 +64,15 @@ const EVENTS = {
    * Payload: { projectId, task, event: 'created'|'updated'|'deleted' }
    */
   GLOBAL_TASK_UPDATED:  'global:task_updated',
+
+  /** Broadcast: a task or project field was updated. */
+  TASK_UPDATED:         'taskUpdated',
+
+  /**
+   * Broadcast: emitted to an individual user's personal room when they receive
+   * a new project invitation.
+   */
+  NEW_INVITATION:       'newInvitation',
 };
 
 // =============================================================================

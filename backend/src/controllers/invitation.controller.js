@@ -56,6 +56,21 @@ const sendInvitation = async (req, res, next) => {
       role,
     });
 
+    // If the invitee already has an account, emit real-time socket notification
+    if (invitee) {
+      try {
+        const { getIO, EVENTS } = require('../config/socket');
+        const populatedInvitation = await Invitation.findById(invitation._id)
+          .populate('projectId', 'name description')
+          .populate('invitedBy', 'name email')
+          .lean();
+          
+        getIO().to(invitee._id.toString()).emit(EVENTS.NEW_INVITATION, populatedInvitation);
+      } catch (err) {
+        console.warn('[invitation.controller] socket emit failed:', err.message);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: `Invitation sent to ${email}.`,
