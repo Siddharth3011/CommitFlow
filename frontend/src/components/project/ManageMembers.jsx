@@ -38,126 +38,6 @@ const RoleBadge = ({ role }) => (
   </span>
 );
 
-// =============================================================================
-// Invite Member Form (Admin only)
-// =============================================================================
-
-const InviteMemberForm = ({ projectId }) => {
-  const dispatch = useDispatch();
-  const { actionLoading, error } = useSelector((state) => state.members);
-  const [form, setForm] = useState({ email: '', role: 'viewer' });
-  const [validationError, setValidationError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  useEffect(() => {
-    return () => dispatch(clearMemberError());
-  }, [dispatch]);
-
-  const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (validationError) setValidationError('');
-    if (error) dispatch(clearMemberError());
-    if (successMsg) setSuccessMsg('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
-    if (!form.email.trim()) {
-      setValidationError('Email address is required.');
-      return;
-    }
-    if (!emailRegex.test(form.email.trim())) {
-      setValidationError('Please enter a valid email address.');
-      return;
-    }
-    const result = await dispatch(
-      addMember({ projectId, email: form.email.trim(), role: form.role })
-    );
-    if (result.meta.requestStatus === 'fulfilled') {
-      setForm({ email: '', role: 'viewer' });
-      setSuccessMsg('Member invited successfully.');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    }
-  };
-
-  const displayError = validationError || error;
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-4">
-        <UserPlus size={15} className="text-muted-foreground" />
-        Invite a member
-      </h3>
-
-      {displayError && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-3">
-          <AlertCircle size={14} className="mt-0.5 shrink-0 text-destructive" />
-          <p className="text-xs text-destructive">{displayError}</p>
-        </div>
-      )}
-
-      {successMsg && (
-        <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 px-3.5 py-3">
-          <p className="text-xs text-green-600 dark:text-green-400">{successMsg}</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-        {/* Email */}
-        <input
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="teammate@example.com"
-          disabled={actionLoading}
-          className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background disabled:opacity-50 transition-colors"
-        />
-
-        {/* Role Selector */}
-        <div className="relative">
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            disabled={actionLoading}
-            className="w-full appearance-none rounded-lg border border-border bg-background py-2.5 pl-3 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background disabled:opacity-50 transition-colors cursor-pointer"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r} className="capitalize">
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={13}
-            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={actionLoading}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-all whitespace-nowrap"
-        >
-          {actionLoading ? (
-            <>
-              <Loader2 size={13} className="animate-spin" />
-              Inviting...
-            </>
-          ) : (
-            <>
-              <UserPlus size={13} />
-              Invite
-            </>
-          )}
-        </button>
-      </form>
-    </div>
-  );
-};
 
 // =============================================================================
 // Member Row
@@ -268,8 +148,6 @@ const ManageMembers = ({ projectId }) => {
 
   return (
     <div className="space-y-5">
-      {/* Invite Form — admin only */}
-      {isAdmin && <InviteMemberForm projectId={projectId} />}
 
       {/* Members List */}
       <div className="rounded-xl border border-border bg-card p-5">

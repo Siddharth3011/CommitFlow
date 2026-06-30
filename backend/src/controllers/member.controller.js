@@ -145,6 +145,20 @@ const updateMemberRole = async (req, res, next) => {
 const removeMember = async (req, res, next) => {
   try {
     const { id: projectId, userId } = req.params;
+    const mongoose = require('mongoose');
+
+    // 1. If the userId is literally 'undefined' or an invalid ObjectId
+    if (!userId || userId === 'undefined' || !mongoose.Types.ObjectId.isValid(userId)) {
+      // Gracefully clean up any broken records for this project (e.g., null userId)
+      await ProjectMember.deleteMany({
+        projectId,
+        $or: [{ userId: null }, { userId: { $exists: false } }]
+      });
+      return res.status(200).json({
+        success: true,
+        message: 'Broken membership record(s) cleaned up successfully.',
+      });
+    }
 
     const member = await ProjectMember.findOneAndDelete({
       projectId,
