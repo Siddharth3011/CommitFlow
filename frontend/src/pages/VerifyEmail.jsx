@@ -16,7 +16,7 @@
       const [isLoading, setIsLoading] = useState(false);
       const [error, setError] = useState('');
       const [timer, setTimer] = useState(0);
-      const [showDevBanner, setShowDevBanner] = useState(import.meta.env.DEV);
+      const [showDevBanner, setShowDevBanner] = useState(true);
       
       const inputRefs = useRef([]);
 

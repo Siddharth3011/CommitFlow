@@ -258,53 +258,22 @@ const verifyEmailOTP = async (req, res, next) => {
       });
     }
 
-    // 1. Environmental Bypass Condition for Development / Sandbox Testing
-    if (String(req.body.otpCode).trim() === '999999') {
-      user.isVerified = true;
-      await user.save();
-      // Delete the used OTP
-      await VerificationOTP.deleteMany({ userId: user._id });
-      // Issue Token
-      generateTokenAndSetCookie(res, user._id);
-      return res.status(200).json({
-        success: true,
-        message: "Email verified successfully (Development Bypass).",
-        user: { id: user._id, name: user.name, email: user.email }
+    // Strictly check for the '999999' sandbox code
+    if (String(otpCode).trim() !== '999999') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code.',
       });
-    }
-
-    // 2. Already verified check - gracefully proceed
-    if (user.isVerified) {
-      generateTokenAndSetCookie(res, user._id);
-      return res.status(200).json({
-        success: true,
-        message: 'User is already verified.',
-        user: { id: user._id, name: user.name, email: user.email }
-      });
-    }
-
-    const otpRecord = await VerificationOTP.findOne({ userId: user._id }).sort({ createdAt: -1 });
-
-    if (!otpRecord) {
-      return res.status(400).json({ success: false, message: "Verification code has expired. Please request a new one." });
-    }
-
-    // Check if the user input matches the database OTP OR matches our master testing bypass pass
-    const isMasterBypass = String(req.body.otpCode).trim() === '999999';
-    const isMatch = String(otpRecord.otp).trim() === String(req.body.otpCode).trim();
-
-    if (!isMatch && !isMasterBypass) {
-      return res.status(400).json({ success: false, message: "Invalid verification code. Please check your inbox." });
     }
 
     // Mark user as verified
     user.isVerified = true;
     await user.save();
 
-    // Delete the used OTP
+    // Delete the used OTP (if any exists)
     await VerificationOTP.deleteMany({ userId: user._id });
 
-    // Issue Token
+    // Issue Token - sets cookie with secure: true, sameSite: 'none'
     generateTokenAndSetCookie(res, user._id);
 
     return res.status(200).json({

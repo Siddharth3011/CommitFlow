@@ -45,11 +45,8 @@ const DevOtpBanner = ({ visible, onClose }) => {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white mb-0.5">
-              🔐 Development Mode: Real-world email delivery is disabled.
-            </p>
-            <p className="text-xs leading-relaxed text-slate-300">
-              Please type '999999' into the secure code blocks below to instantly verify your profile.
+            <p className="text-sm font-semibold text-white leading-relaxed">
+              🔐 Sandbox Mode: Enter '999999' to instantly authenticate this profile.
             </p>
           </div>
 

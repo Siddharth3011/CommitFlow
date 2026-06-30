@@ -22,6 +22,9 @@ const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
 
+// Trust proxy for secure cross-site cookies in production
+app.set('trust proxy', 1);
+
 // =============================================================================
 // Middleware Stack
 // =============================================================================
