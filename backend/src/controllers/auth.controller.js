@@ -202,24 +202,44 @@ const login = async (req, res, next) => {
       });
     }
 
-    // --- STOP and challenge with OTP ---
-    user.isVerified = false;
-    await user.save();
-
+    // --- OTP Challenge — Every login requires fresh OTP verification ---
+    // Purge any stale OTPs for this user first, then generate a fresh code.
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    await VerificationOTP.create({
-      userId: user._id,
-      otp: otpCode,
-    });
 
-    await sendVerificationEmail(user.email, otpCode);
+    try {
+      await VerificationOTP.deleteMany({ userId: user._id });
+      await VerificationOTP.create({ userId: user._id, otp: otpCode });
+
+      // ── DEV MODE: Print OTP to terminal (no email delivery needed) ──────
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`\n╔═══════════════════════════════════════╗`);
+        console.log(`║  DEV OTP for ${user.email.padEnd(23)} ║`);
+        console.log(`║  Code: ${otpCode}                        ║`);
+        console.log(`╚═══════════════════════════════════════╝\n`);
+      }
+
+      // Send email — non-fatal: a Resend sandbox restriction must never
+      // prevent login from proceeding. The user can read the OTP from the
+      // backend terminal in development or from the DB in production debug.
+      try {
+        await sendVerificationEmail(user.email, otpCode);
+      } catch (emailErr) {
+        console.warn(`⚠️  Login OTP email failed for ${user.email}: ${emailErr.message}`);
+        console.warn('Login will proceed. User can read the OTP from the backend terminal.');
+      }
+    } catch (otpErr) {
+      console.error('❌ Failed to persist login OTP:', otpErr.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Could not generate verification code. Please try again.',
+      });
+    }
 
     return res.status(200).json({
       success: true,
       status: 'VERIFICATION_REQUIRED',
       email: user.email,
-      message: 'Login credentials verified. OTP sent to your email.',
+      message: 'Login credentials verified. Please check your email for the OTP.',
     });
   } catch (error) {
     next(error);

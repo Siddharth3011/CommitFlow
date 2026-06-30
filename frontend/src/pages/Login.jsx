@@ -14,6 +14,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [devOtpHint, setDevOtpHint] = useState(false);
 
   // Redirect to dashboard once the session is established
   useEffect(() => {
@@ -58,9 +59,13 @@ const Login = () => {
       password: formData.password,
     });
 
-    // Check if the thunk action was fulfilled
+    // If VERIFICATION_REQUIRED, show the dev-mode OTP hint banner and navigate
     if (actionResult?.type === 'auth/loginUser/fulfilled') {
-      navigate('/verify-email', { state: { email: formData.email.trim() } });
+      setDevOtpHint(true);
+      // Small delay so the user can read the banner before the page transitions
+      setTimeout(() => {
+        navigate('/verify-email', { state: { email: formData.email.trim() } });
+      }, 2000);
     }
   };
 
@@ -82,6 +87,18 @@ const Login = () => {
             Sign in to your CommitFlow workspace
           </p>
         </div>
+
+        {/* Dev-mode OTP hint banner */}
+        {devOtpHint && (
+          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+            <p className="font-semibold text-amber-400 mb-0.5">🔐 Development Mode</p>
+            <p className="text-amber-300/90 leading-snug">
+              OTP email delivery may be restricted in sandbox mode.<br />
+              <span className="font-medium">Check your backend terminal</span> — the verification
+              code was printed there when you submitted.
+            </p>
+          </div>
+        )}
 
         {/* Card */}
         <div className="rounded-2xl border border-border bg-card px-8 py-8 shadow-sm">
