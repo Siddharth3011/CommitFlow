@@ -47,6 +47,7 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await API.post('/auth/logout');
+      localStorage.removeItem('token');
       return null;
     } catch (error) {
       return rejectWithValue(
@@ -63,6 +64,10 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return rejectWithValue('No token found in localStorage.');
+      }
       const response = await API.get('/auth/me');
       return response.data.user;
     } catch (error) {

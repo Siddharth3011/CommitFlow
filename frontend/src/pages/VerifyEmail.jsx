@@ -111,6 +111,10 @@
           const response = await API.post('/auth/verify-otp', { email, otpCode });
           const data = response.data;
 
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
+
           // Dispatch auth state
           dispatch(setCredentials({ user: data.user }));
           

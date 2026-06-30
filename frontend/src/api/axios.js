@@ -11,5 +11,12 @@ const API = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
+// Interceptor to inject the token from localStorage into the Authorization header
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 export default API;

@@ -274,10 +274,11 @@ const verifyEmailOTP = async (req, res, next) => {
     await VerificationOTP.deleteMany({ userId: user._id });
 
     // Issue Token - sets cookie with secure: true, sameSite: 'none'
-    generateTokenAndSetCookie(res, user._id);
+    const token = generateTokenAndSetCookie(res, user._id);
 
     return res.status(200).json({
       success: true,
+      token,
       message: "Email verified successfully.",
       user: { id: user._id, name: user.name, email: user.email }
     });
