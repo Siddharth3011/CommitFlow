@@ -462,8 +462,8 @@ const Dashboard = () => {
       </div>
       {/* ── Pending Invitations Banner ─────────────────────────────────── */}
       {invitations.length > 0 && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-amber-400">
+        <div className="rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-500/5 dark:border-amber-500/20 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
             <Mail size={14} />
             You have {invitations.length} pending project invitation{invitations.length > 1 ? 's' : ''}
           </div>
@@ -473,19 +473,20 @@ const Dashboard = () => {
               return (
                 <div
                   key={inv._id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg bg-card border border-border px-4 py-3"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg bg-white dark:bg-card border border-amber-200 dark:border-border px-4 py-3 shadow-sm"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    {/* Project name — crisp slate-900 in light mode */}
+                    <p className="text-sm font-semibold text-slate-900 dark:text-foreground truncate">
                       {inv.projectId?.name || 'Unknown Project'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-slate-600 dark:text-muted-foreground mt-0.5">
                       Invited by{' '}
-                      <span className="font-semibold text-foreground">
+                      <span className="font-semibold text-slate-900 dark:text-foreground">
                         {inv.invitedBy?.name || 'a team member'}
                       </span>{' '}
                       &middot; Role:{' '}
-                      <span className="capitalize font-medium text-foreground">{inv.role}</span>
+                      <span className="capitalize font-medium text-slate-900 dark:text-foreground">{inv.role}</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -517,7 +518,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           {
@@ -547,17 +547,19 @@ const Dashboard = () => {
             className={`relative rounded-xl border ${border} bg-gradient-to-br ${gradient} p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden`}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {/* Label — darkened for light-mode legibility */}
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                 {label}
               </p>
               <div className="p-2 bg-background/50 backdrop-blur-sm rounded-lg border border-border">
                 <Icon
                   size={14}
-                  className="text-muted-foreground group-hover:scale-110 transition-transform duration-200"
+                  className="text-slate-500 dark:text-muted-foreground group-hover:scale-110 transition-transform duration-200"
                 />
               </div>
             </div>
-            <p className="mt-3 text-3xl font-extrabold text-foreground">
+            {/* Value — crisp slate-900 in light, white in dark */}
+            <p className="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white">
               {loading ? <span className="inline-block h-8 w-10 animate-pulse rounded bg-muted" /> : value}
             </p>
           </div>
@@ -583,8 +585,9 @@ const Dashboard = () => {
 
         {/* ── Left Column (65%) ─ Your Projects ── */}
         <div className="w-full lg:w-[65%] space-y-4">
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-border pb-2">
+            {/* Section header — deeper tint in light mode */}
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Your Projects
             </h2>
             {!loading && (
@@ -641,10 +644,11 @@ const Dashboard = () => {
         {/* ── Right Column (35%) ─ System Activity Feed ── */}
         <div className="w-full lg:w-[35%] flex flex-col space-y-6 lg:sticky lg:top-4">
           <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-border pb-2">
             <div className="flex items-center gap-2">
-              <Activity size={14} className="text-muted-foreground" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              <Activity size={14} className="text-slate-500 dark:text-muted-foreground" />
+              {/* Section header — deeper tint in light mode */}
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                 System Activity
               </h2>
             </div>

@@ -341,12 +341,12 @@ export const DashboardLayout = () => {
       {/* Desktop Sidebar */}
       {/* ============================================================================= */}
       <aside
-        className={`hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ${
+        className={`hidden md:flex flex-col border-r border-slate-200 dark:border-border bg-card transition-all duration-300 ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* Header/Logo */}
-        <div className="flex items-center justify-between p-4 border-b border-border h-16">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-border h-16">
           <Logo />
           {!isSidebarCollapsed && (
             <button
@@ -361,7 +361,7 @@ export const DashboardLayout = () => {
 
         {/* Expand Trigger (when collapsed) */}
         {isSidebarCollapsed && (
-          <div className="flex justify-center py-3 border-b border-border">
+          <div className="flex justify-center py-3 border-b border-slate-200 dark:border-border">
             <button
               onClick={() => setIsSidebarCollapsed(false)}
               className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
@@ -413,7 +413,7 @@ export const DashboardLayout = () => {
         </nav>
 
         {/* Profile / Logout Section */}
-        <div className="p-3 border-t border-border bg-card/50">
+        <div className="p-3 border-t border-slate-200 dark:border-border bg-card/50">
           <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
             {/* User Avatar & Info */}
             <div className="flex items-center gap-3 overflow-hidden">
@@ -526,7 +526,7 @@ export const DashboardLayout = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         
         {/* Top Navigation Header */}
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10">
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 dark:border-border bg-card px-4 md:px-6 z-10">
           
           {/* Left: Hamburger menu (mobile) & Breadcrumbs (desktop) */}
           <div className="flex items-center gap-4">
