@@ -64,7 +64,15 @@ const register = async (req, res, next) => {
         });
 
         const savedOtp = await otpDoc.save();
-        console.log("DEBUG REGISTRATION -> Success! OTP document saved in MongoDB:", savedOtp);
+      console.log("DEBUG REGISTRATION -> Success! OTP document saved in MongoDB:", savedOtp);
+
+      // ── DEV MODE: Print OTP to terminal so it's visible without email delivery ──
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`\n╔═══════════════════════════════════════╗`);
+        console.log(`║  DEV OTP for ${existingUser.email.padEnd(23)} ║`);
+        console.log(`║  Code: ${generatedOtp}                        ║`);
+        console.log(`╚═══════════════════════════════════════╝\n`);
+      }
 
       } catch (dbError) {
         console.error("❌ CRITICAL ERROR SAVING OTP TO MONGODB:", dbError.message);
@@ -108,7 +116,15 @@ const register = async (req, res, next) => {
       });
 
       const savedOtp = await otpDoc.save();
-      console.log("DEBUG REGISTRATION -> Success! OTP document saved in MongoDB:", savedOtp);
+      console.log("DEBUG REGISTRATION -> OTP saved for new user:", savedOtp);
+
+      // ── DEV MODE: Print OTP to terminal so it's visible without email delivery ──
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`\n╔═══════════════════════════════════════╗`);
+        console.log(`║  DEV OTP for ${user.email.padEnd(23)} ║`);
+        console.log(`║  Code: ${generatedOtp}                        ║`);
+        console.log(`╚═══════════════════════════════════════╝\n`);
+      }
 
     } catch (dbError) {
       console.error("❌ CRITICAL ERROR SAVING OTP TO MONGODB:", dbError.message);

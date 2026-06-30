@@ -13,6 +13,9 @@ import {
   Clock,
   Kanban,
   BarChart3,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { fetchProjectById, clearSelectedProject } from '../features/projects/projectSlice';
 import { fetchProjectMembers, clearMembers } from '../features/projects/memberSlice';
@@ -20,6 +23,7 @@ import useProjectSocket from '../hooks/useProjectSocket';
 import ManageMembers from '../components/project/ManageMembers';
 import KanbanBoard from '../components/project/KanbanBoard';
 import ProjectAnalytics from '../components/project/ProjectAnalytics';
+import API from '../api/axios';
 
 // =============================================================================
 // Tab Bar
@@ -33,12 +37,124 @@ const TABS = [
 ];
 
 // =============================================================================
+// Inline Editable Field — Admin Only
+// =============================================================================
+
+const InlineEdit = ({ value, onSave, multiline = false, placeholder = '' }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (draft.trim() === (value || '').trim()) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    await onSave(draft.trim());
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    setDraft(value || '');
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-2">
+        {multiline ? (
+          <textarea
+            autoFocus
+            rows={3}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            className="w-full resize-none rounded-lg border border-ring bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
+          />
+        ) : (
+          <input
+            autoFocus
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            className="w-full rounded-lg border border-ring bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
+          />
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity"
+          >
+            {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+            Save
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <X size={11} />
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className="group flex items-center gap-1.5 text-left hover:opacity-80 transition-opacity"
+      title="Click to edit"
+    >
+      <span className="shrink-0 opacity-0 group-hover:opacity-70 transition-opacity">
+        <Pencil size={12} className="text-muted-foreground" />
+      </span>
+    </button>
+  );
+};
+
+// =============================================================================
 // Overview Tab
 // =============================================================================
 
-const OverviewTab = ({ project, members }) => {
+const OverviewTab = ({ project, members, isAdmin, projectId }) => {
+  const dispatch = useDispatch();
   const owner = members.find((m) => m.role === 'admin');
   const ownerName = owner?.userId?.name || 'Unknown';
+
+  const [editingField, setEditingField] = useState(null); // 'name' | 'description' | null
+  const [draftName, setDraftName] = useState(project.name || '');
+  const [draftDesc, setDraftDesc] = useState(project.description || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (field) => {
+    const updates = {};
+    if (field === 'name') updates.name = draftName.trim();
+    if (field === 'description') updates.description = draftDesc.trim();
+
+    if (!updates.name && field === 'name') return; // name required
+    setSaving(true);
+    try {
+      await API.patch(`/projects/${projectId}`, updates);
+      dispatch(fetchProjectById(projectId)); // refresh project data
+    } catch (err) {
+      console.error('Failed to update project:', err);
+    } finally {
+      setSaving(false);
+      setEditingField(null);
+    }
+  };
+
+  const handleCancel = (field) => {
+    if (field === 'name') setDraftName(project.name || '');
+    if (field === 'description') setDraftDesc(project.description || '');
+    setEditingField(null);
+  };
 
   const metaItems = [
     {
@@ -77,13 +193,56 @@ const OverviewTab = ({ project, members }) => {
     <div className="space-y-5">
       {/* Description Card */}
       <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          About this project
-        </h3>
-        {project.description ? (
-          <p className="text-sm leading-relaxed text-foreground">
-            {project.description}
-          </p>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            About this project
+          </h3>
+          {/* Admin-only edit button for description */}
+          {isAdmin && editingField !== 'description' && (
+            <button
+              onClick={() => {
+                setDraftDesc(project.description || '');
+                setEditingField('description');
+              }}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+              title="Edit description (Admin only)"
+            >
+              <Pencil size={11} />
+              Edit
+            </button>
+          )}
+        </div>
+
+        {editingField === 'description' ? (
+          <div className="flex flex-col gap-2">
+            <textarea
+              autoFocus
+              rows={3}
+              value={draftDesc}
+              onChange={(e) => setDraftDesc(e.target.value)}
+              placeholder="Describe what this project is about..."
+              className="w-full resize-none rounded-lg border border-ring bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleSave('description')}
+                disabled={saving}
+                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity"
+              >
+                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                Save
+              </button>
+              <button
+                onClick={() => handleCancel('description')}
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X size={11} />
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : project.description ? (
+          <p className="text-sm leading-relaxed text-foreground">{project.description}</p>
         ) : (
           <p className="text-sm italic text-muted-foreground/60">
             No description has been added to this project yet.
@@ -130,29 +289,45 @@ const ProjectWorkspace = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Admin-only inline edit state for the header name
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+
   useEffect(() => {
     if (id) {
       dispatch(fetchProjectById(id));
       dispatch(fetchProjectMembers(id));
     }
-    // Cleanup on unmount to avoid stale data leaking into other routes
     return () => {
       dispatch(clearSelectedProject());
       dispatch(clearMembers());
     };
   }, [id, dispatch]);
 
-  // =========================================================================
-  // Real-Time Collaboration — Socket.io
-  // =========================================================================
-  // Activates the WebSocket connection and subscribes to the project room.
-  // The hook handles its own connect/disconnect lifecycle and dispatches
-  // synchronous Redux actions (taskAddedFromSocket, taskMovedFromSocket,
-  // taskRemovedFromSocket) whenever a peer emits a task event.
-  //
-  // Passing `user` (not just user._id) lets the hook also use user.name for
-  // future presence/cursor features without a separate selector.
+  // Sync draft when project loads
+  useEffect(() => {
+    if (project?.name) setDraftName(project.name);
+  }, [project?.name]);
+
   useProjectSocket(id, user);
+
+  const handleSaveName = async () => {
+    if (!draftName.trim() || draftName.trim() === project.name) {
+      setEditingName(false);
+      return;
+    }
+    setNameSaving(true);
+    try {
+      await API.patch(`/projects/${id}`, { name: draftName.trim() });
+      dispatch(fetchProjectById(id));
+    } catch (err) {
+      console.error('Failed to update project name:', err);
+    } finally {
+      setNameSaving(false);
+      setEditingName(false);
+    }
+  };
 
   // ─── Loading state ────────────────────────────────────────────────────────
   if (projectLoading || membersLoading) {
@@ -186,12 +361,12 @@ const ProjectWorkspace = () => {
     );
   }
 
-  // ─── Not found ────────────────────────────────────────────────────────────
   if (!project) return null;
 
   // Resolve current user's role in this project
   const currentMembership = members.find((m) => m.userId?._id === user?._id);
   const currentRole = currentMembership?.role || 'viewer';
+  const isAdmin = currentRole === 'admin';
 
   const initials = project.name?.slice(0, 2).toUpperCase() || 'PR';
 
@@ -213,11 +388,53 @@ const ProjectWorkspace = () => {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-sm font-bold text-foreground">
             {initials}
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {project.name}
-            </h1>
-            {project.description && (
+          <div className="min-w-0">
+            {/* Project Name — inline editable for admins */}
+            {isAdmin && editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  type="text"
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') { setDraftName(project.name); setEditingName(false); }
+                  }}
+                  className="rounded-lg border border-ring bg-background px-2 py-1 text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 w-full max-w-xs"
+                />
+                <button
+                  onClick={handleSaveName}
+                  disabled={nameSaving}
+                  className="flex items-center justify-center h-7 w-7 rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 shrink-0"
+                >
+                  {nameSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                </button>
+                <button
+                  onClick={() => { setDraftName(project.name); setEditingName(false); }}
+                  className="flex items-center justify-center h-7 w-7 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary shrink-0"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <div className="group flex items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
+                  {project.name}
+                </h1>
+                {/* Admin-only edit pencil for project name */}
+                {isAdmin && (
+                  <button
+                    onClick={() => { setDraftName(project.name); setEditingName(true); }}
+                    className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+                    title="Edit project name (Admin only)"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+            {project.description && !editingName && (
               <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
                 {project.description}
               </p>
@@ -262,7 +479,12 @@ const ProjectWorkspace = () => {
       {/* Tab Content */}
       <div className={activeTab === 'board' ? 'overflow-x-auto' : ''}>
         {activeTab === 'overview' && (
-          <OverviewTab project={project} members={members} />
+          <OverviewTab
+            project={project}
+            members={members}
+            isAdmin={isAdmin}
+            projectId={id}
+          />
         )}
         {activeTab === 'board' && (
           <KanbanBoard projectId={id} members={members} />

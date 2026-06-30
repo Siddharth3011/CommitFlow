@@ -23,6 +23,7 @@ import socket, { SOCKET_EVENTS } from '../../config/socket';
 import { updateGlobalProjectProgress, appendActivityFeed } from '../../features/projects/projectSlice';
 import { moveLiveTask } from '../../features/tasks/taskSlice';
 import { addLiveComment } from '../../features/tasks/commentSlice';
+import API from '../../api/axios';
 
 export const DashboardLayout = () => {
   const { user, handleLogout } = useAuth();
@@ -31,6 +32,7 @@ export const DashboardLayout = () => {
   const dispatch = useDispatch();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const { selectedProject, projects } = useSelector((state) => state.projects);
   const projectsRef = React.useRef(projects);
   React.useEffect(() => {
@@ -155,6 +157,23 @@ export const DashboardLayout = () => {
     };
   }, [user?._id, dispatch]);
 
+  // ── Fetch pending invitation count for notification dot ────────────────────
+  useEffect(() => {
+    if (!user?._id) return;
+    const loadInviteCount = async () => {
+      try {
+        const res = await API.get('/invitations/mine');
+        setPendingInviteCount((res.data.invitations || []).length);
+      } catch (_) {
+        // Non-critical — silently ignore
+      }
+    };
+    loadInviteCount();
+    // Refresh every 60 seconds while the layout is mounted
+    const interval = setInterval(loadInviteCount, 60000);
+    return () => clearInterval(interval);
+  }, [user?._id]);
+
   // ── Effect 2: Secondary sync — Variant A recount from live tasks array ────
   // Runs whenever the Redux tasks array changes (loaded by ProjectWorkspace).
   // Provides precise done/total counters when the full task list is available,
@@ -230,10 +249,10 @@ export const DashboardLayout = () => {
   // Navigation config mapping icons and paths
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Projects', path: '/projects', icon: FolderKanban },
-    { name: 'Team', path: '/team', icon: Users },
+    { name: 'Projects',  path: '/projects',  icon: FolderKanban },
+    { name: 'Team',      path: '/team',      icon: Users, badge: pendingInviteCount },
     { name: 'Analytics', path: '/analytics', icon: BarChart2 },
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Settings',  path: '/settings',  icon: Settings },
   ];
 
   // Dynamic breadcrumb generation based on route path
@@ -364,15 +383,30 @@ export const DashboardLayout = () => {
               <NavLink
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'bg-secondary text-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
                 }`}
                 title={item.name}
               >
-                <Icon size={18} className={isActive ? 'text-primary' : ''} />
+                <span className="relative shrink-0">
+                  <Icon size={18} className={isActive ? 'text-primary' : ''} />
+                  {/* Notification dot — shown when there are pending invitations */}
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                    </span>
+                  )}
+                </span>
                 {!isSidebarCollapsed && <span>{item.name}</span>}
+                {/* Badge count label (expanded sidebar only) */}
+                {!isSidebarCollapsed && item.badge > 0 && (
+                  <span className="ml-auto rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                    {item.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}
